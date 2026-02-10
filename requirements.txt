@@ -1,0 +1,40 @@
+# Core dependencies
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Google Sheets integration
+gspread
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+
+# Data processing
+pandas
+numpy
+
+# Frontend
+streamlit
+plotly
+
+# HTTP client
+requests
+httpx
+
+# Date handling
+python-dateutil
+pytz
+
+# Environment management
+python-dotenv
+
+# Testing
+pytest
+pytest-asyncio
+
+# Code quality
+black
+flake8
+
+# Documentation
+pydantic

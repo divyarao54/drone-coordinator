@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "skylarkdrones-487006",
+  "private_key_id": "99dc39e2a5ff8a3c2f896d770f1067623a973f31",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQC3p8jwoSVwdiCz\nOB6NOXa3sZKSRWcl5CcK2DZ3SSR5mqtD5yvlHqVJjYN0yXUAbq5KNhUjUKgAkOoN\nt9cOb8Ch4MPVETX+8uGeltxNADOJLciZKKT47BkmFnrYOg/6z5GHV9dzvN5QAe2p\nJO/P9E4JOpGuYxAM/7CRVgLkUiBBXIFJ2KHS/MoLUMZANyWCL0GQMpKQrT33Ms2/\nDuNh1Tg27TZLXCdlzSDgZXReoHvJRWD4SsQ5n+y/lazupwxAbJEkl7TsxVoG6ksX\nAumaQNLpRYOfvkOmGMxXKDOTV3hFMC2Zk+Vv0NrcmS7qwDGVfnpQxmxaVoEWLVbR\nltlVHlolAgMBAAECgf9D9Okfw/WK7XDPDq8oHknPgHEY9JVk5E0w++eImSrmAuD/\nhRZb4BJgauV/aK751xHswP8RWAzSV1ihAKt7w1KbfGFXXqniCc7m39R2HfoLJZ/9\nOt5cJhgQ6J2jZO/5JHgpbfp5wcZSvUyoBBotB1CTAl7lnKsN9b1gCefwws/m01WQ\nKmPNSNasOpAsLatECajURXQ8KrwJcmqo2zit/NdqXhVX4s9HW+GtOqqeDVQF7OOI\nozjttPLDGmqmO4CB4C6EvV8IrFpbiBx+g9hV4OfvZ0BEWct7+XrYqaAL+qUlOcPO\nILPcKMbAmgRP39ltInC0sFwMtdAA2svk1Ov+b8kCgYEA76Cy+REQX8mqXYEHR+0w\nHAIJfQFiVY++gnVmiylMn6MnmSVSpriEjOlkb2iOR3tz/eJika9CHRM+XGgwENs6\nwcgrF+r7jDTA/LaMIN8BG1RpROJqdybqGZu5/NpBL0bMyL2N505wKq/WletVUCnX\n94JC3iUm4g5AAEliBJKwz4MCgYEAxDQUlqo8QB1aWOvcwxOT/GUSsubL+Q0LZA8v\nTLMOERmYSeg1T9Uen+g1por6Rkf5LgGRJfRySjqyeIDHpd1LdtVEINAKWwEnDm4A\n7ESYPzWuyDq33qG1rJU16Cc9MsqnMucfpToSzqHpTVDJRw6UsO9U8eyFfafISjDE\nEen/FzcCgYEAnH4mY+Jw/x2E1WvehWqxcJkj+S9eOOKXWDuzrE5cbCTxR2LIh3kZ\nl60Umm19/dDx/2xJUztRwgs/ProMKfYCeWtwOT6M6RPKtT/CY/U/k8mctg/n18ji\nObcpz6f5yhZCxxaEBfuD5VzQlzgJj0DEei/n24wHyLnlsko6aSIjtmECgYB+N8LG\n6dy4oils6s6p7/5Tb/IHhNHS9cFOLTaQcN+rwHtnkCo7oS6CUC+zY9R9Qe/a2Mc3\nU3nyprAJNU86NJJHcArT0QHYaXVmov2VAMuwXiiCRsPiRMVKsPJs1lFYS2YkKOsC\nr8lJhH9BbacOPyMIb+6Fc1Ks8zK2B4kavR2NIQKBgGWMdfYdCf1WD0dyC1jO8Gv/\nQsrebjEhDUQL5r7h2e5S9yS4MIlQtxEihfb0E5HQcAVmcBtHWVdTpqNoIff/mx5t\nzMiTxt5e+xUQH1lbf34pFcUQg5QWWXyDLMKWg5+Np6A413RH0rTqmnhEaj3yQWr6\nKBOujMp6kyHcZLDFpDEi\n-----END PRIVATE KEY-----\n",
+  "client_email": "skylarkdronesproject@skylarkdrones-487006.iam.gserviceaccount.com",
+  "client_id": "105507791155879825404",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/skylarkdronesproject%40skylarkdrones-487006.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

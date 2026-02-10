@@ -1,0 +1,398 @@
+# .gitignore for Drone Operations Coordinator AI Agent
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Secrets and Credentials
+credentials.json
+*.key
+*.pem
+*.p12
+*.crt
+service-account-key.json
+firebase-key.json
+
+# Google Sheets/Drive specific
+client_secret*.json
+client_secrets.json
+token.json
+token.pickle
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Editor Files
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store?
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+api.log
+drone_coordinator.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+.caches/
+cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Coverage
+.coverage
+.coverage.*
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Output directories
+/dist/
+/out/
+
+# Temp files
+*.tmp
+*.temp
+temp/
+
+# System files
+*.pid
+*.seed
+*.pid.lock
+
+# Local Development Files
+local_settings.py
+local_config.py
+settings_local.py
+
+# Docker
+docker-compose.override.yml
+
+# Streamlit
+.streamlit/
+.streamlit/
+
+# Data files (optional - exclude if you want to track CSV files)
+# Uncomment if you DON'T want to track CSV files in git
+# data/*.csv
+# data/*.json
+
+# Machine Learning
+models/
+*.h5
+*.pkl
+*.joblib
+
+# Documentation
+_build/
+docs/_build/
+
+# Node.js (if you have any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React/Next.js (if applicable)
+.next/
+out/
+
+# Svelte (if applicable)
+.svelte-kit/
+
+# Vue.js (if applicable)
+dist/
+dist-ssr/
+
+# Nuxt.js (if applicable)
+.nuxt/
+
+# Quasar (if applicable)
+.quasar/
+
+# Angular (if applicable)
+dist/
+
+# Sapper (if applicable)
+__sapper__/
+
+# Vite (if applicable)
+dist/
+
+# Parcel (if applicable)
+dist/
+.parcel-cache/
+
+# Next.js (if applicable)
+.next/
+
+# Gatsby (if applicable)
+.cache/
+public
+
+# Gridsome (if applicable)
+.cache/
+dist
+
+# Serverless
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/
+
+# Certificate files
+*.cer
+*.csr
+*.der
+
+# Binary files
+*.exe
+*.dll
+*.bin
+
+# Compiled files
+*.class
+*.o
+
+# Backup files
+*.bak
+*.backup
+
+# Mac OS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+.Spotlight-V100
+.Trashes
+
+# Windows specific
+desktop.ini
+Thumbs.db
+ehthumbs.db
+
+# Linux specific
+*~
+
+# JetBrains IDEs
+.idea/
+*.iws
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Visual Studio
+*.vcxproj
+*.vcxproj.filters
+*.sln
+*.suo
+*.opensdf
+*.sdf
+
+# Eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Azure Functions
+func/
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output/
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+# Comment in the public line in if your project uses Gatsby and not Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
+
+# Storybook build outputs
+.out
+.storybook-out
+storybook-static
+
+# Rollup cache
+rollup-cache/
+
+# Vite cache
+vite-cache/
+
+# Temporary folders
+tmp/
+temp/
+
+# Additional project-specific ignores
+# Add any project-specific files or directories here
+
+# Sample data files (optional - keep if you want sample data in repo)
+# !data/sample_pilot_roster.csv
+# !data/sample_drone_fleet.csv
+# !data/sample_missions.csv
+
+# Keep the data directory but ignore specific files
+data/*.log
+data/*.tmp
+data/*.bak
+
+# Development environment files
+.devcontainer/
+
+# Railway deployment
+railway.json
+
+# Replit
+.replit
