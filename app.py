@@ -1,8 +1,28 @@
 import streamlit as st
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
+import random
+import sys
+import os
+
+# Add components directory to path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'components'))
+
+# Import components
+try:
+    from components.assignment_tracker import display_assignment_tracking
+    from components.drone_inventory import display_drone_inventory
+except ImportError:
+    # Define placeholder functions if components aren't available
+    def display_assignment_tracking():
+        st.title("🔗 Assignment Tracking")
+        st.info("Assignment tracking components not loaded")
+    
+    def display_drone_inventory():
+        st.title("🚁 Drone Inventory")
+        st.info("Drone inventory components not loaded")
 
 # Page configuration
 st.set_page_config(
@@ -230,6 +250,139 @@ def display_missions():
                         st.session_state.current_view = f"assign_{mission['project_id']}"
                         st.rerun()
 
+def display_new_assignment():
+    """Display new assignment interface"""
+    st.title("➕ New Assignment")
+    
+    # Get all missions
+    missions = call_api("/missions")
+    if not missions:
+        st.warning("No missions available. Create a mission first.")
+        return
+    
+    # Mission selection
+    st.subheader("1. Select Mission")
+    mission_options = [f"{m['project_id']} - {m['client']} ({m['priority']})" for m in missions]
+    selected_mission_str = st.selectbox("Choose a mission", mission_options)
+    
+    if selected_mission_str:
+        # Extract mission ID
+        mission_id = selected_mission_str.split(' - ')[0]
+        
+        # Get the selected mission details
+        selected_mission = next((m for m in missions if m['project_id'] == mission_id), None)
+        
+        if selected_mission:
+            st.info(f"""
+            **Mission Details:**
+            - Client: {selected_mission['client']}
+            - Location: {selected_mission['location']}
+            - Dates: {selected_mission['start_date']} to {selected_mission['end_date']}
+            - Required Skills: {selected_mission['required_skills']}
+            - Required Certs: {selected_mission['required_certs']}
+            """)
+            
+            # Get available resources for this mission
+            available_pilots = call_api(f"/missions/{mission_id}/available-pilots")
+            available_drones = call_api(f"/missions/{mission_id}/available-drones")
+            
+            st.subheader("2. Select Resources")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Available Pilots**")
+                if available_pilots:
+                    pilot_options = {}
+                    for pilot in available_pilots:
+                        key = f"{pilot['name']} ({pilot['pilot_id']})"
+                        pilot_options[key] = {
+                            'id': pilot['pilot_id'],
+                            'skills': pilot['skills'],
+                            'certs': pilot['certifications'],
+                            'location': pilot['location']
+                        }
+                    
+                    selected_pilot_key = st.selectbox(
+                        "Choose a pilot",
+                        list(pilot_options.keys()),
+                        format_func=lambda x: f"{x} - Skills: {pilot_options[x]['skills']}"
+                    )
+                    
+                    if selected_pilot_key:
+                        pilot_info = pilot_options[selected_pilot_key]
+                        st.write(f"**Skills:** {pilot_info['skills']}")
+                        st.write(f"**Certifications:** {pilot_info['certs']}")
+                        st.write(f"**Location:** {pilot_info['location']}")
+                else:
+                    st.warning("No pilots available for this mission")
+                    selected_pilot_key = None
+            
+            with col2:
+                st.write("**Available Drones**")
+                if available_drones:
+                    drone_options = {}
+                    for drone in available_drones:
+                        key = f"{drone['drone_id']} ({drone['model']})"
+                        drone_options[key] = {
+                            'id': drone['drone_id'],
+                            'capabilities': drone['capabilities'],
+                            'location': drone['location'],
+                            'maintenance': drone.get('maintenance_due', 'Not due')
+                        }
+                    
+                    selected_drone_key = st.selectbox(
+                        "Choose a drone",
+                        list(drone_options.keys()),
+                        format_func=lambda x: f"{x} - Capabilities: {drone_options[x]['capabilities']}"
+                    )
+                    
+                    if selected_drone_key:
+                        drone_info = drone_options[selected_drone_key]
+                        st.write(f"**Capabilities:** {drone_info['capabilities']}")
+                        st.write(f"**Location:** {drone_info['location']}")
+                        st.write(f"**Maintenance:** {drone_info['maintenance']}")
+                else:
+                    st.warning("No drones available for this mission")
+                    selected_drone_key = None
+            
+            # Assignment button
+            st.subheader("3. Confirm Assignment")
+            
+            if st.button("🔗 Assign Resources", type="primary", use_container_width=True):
+                if selected_pilot_key and selected_drone_key:
+                    pilot_id = pilot_options[selected_pilot_key]['id']
+                    drone_id = drone_options[selected_drone_key]['id']
+                    
+                    with st.spinner("Making assignment..."):
+                        result = call_api("/assign", "POST", {
+                            "project_id": mission_id,
+                            "pilot_id": pilot_id,
+                            "drone_id": drone_id
+                        })
+                        
+                        if result:
+                            st.success("✅ Assignment successful!")
+                            st.balloons()
+                            
+                            # Show assignment details
+                            st.info(f"""
+                            **Assignment Details:**
+                            - Mission: {mission_id} ({selected_mission['client']})
+                            - Pilot: {selected_pilot_key}
+                            - Drone: {selected_drone_key}
+                            - Assignment Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                            """)
+                            
+                            # Option to go to assignments view
+                            if st.button("View All Assignments"):
+                                st.session_state.current_view = "assignments"
+                                st.rerun()
+                        else:
+                            st.error("Assignment failed. Please check for conflicts.")
+                else:
+                    st.error("Please select both a pilot and a drone")
+
 def chat_interface():
     """Display conversational interface"""
     st.title("💬 Coordinator Assistant")
@@ -270,9 +423,10 @@ def main():
             "dashboard": "📊 Dashboard",
             "chat": "💬 Chat Assistant",
             "pilots": "👨‍✈️ Pilots",
-            "drones": "🚁 Drones",
+            "drones": "🚁 Drone Inventory",  # Changed from "Drones"
             "missions": "📋 Missions",
             "assign": "➕ New Assignment",
+            "assignments": "🔗 Assignment Tracking",  # Changed from "Current Assignments"
             "conflicts": "⚠️ Conflicts"
         }
         
@@ -287,7 +441,7 @@ def main():
         st.divider()
         
         # Sync status
-        if st.button("🔄 Sync with Google Sheets"):
+        if st.button("🔄 Sync with Google Sheets", use_container_width=True):
             with st.spinner("Syncing..."):
                 result = call_api("/sync", "POST")
                 if result:
@@ -302,14 +456,16 @@ def main():
         if stats:
             st.write(f"🟢 API: Online")
             st.write(f"📊 Last sync: {stats.get('last_sync', 'N/A')}")
+            st.write(f"👨‍✈️ Available pilots: {stats.get('available_pilots', 0)}")
+            st.write(f"🚁 Available drones: {stats.get('available_drones', 0)}")
     
-    # Display selected view
+    # Display selected view - UPDATE THIS SECTION
     if st.session_state.current_view == "dashboard":
         display_dashboard()
     elif st.session_state.current_view == "pilots":
         display_pilots()
     elif st.session_state.current_view == "drones":
-        display_drones()
+        display_drone_inventory()  # Changed from display_drones()
     elif st.session_state.current_view == "missions":
         display_missions()
     elif st.session_state.current_view == "chat":
@@ -322,10 +478,10 @@ def main():
                 st.error(conflict['message'])
         else:
             st.success("No conflicts detected!")
-    elif st.session_state.current_view.startswith("assign_"):
-        project_id = st.session_state.current_view.replace("assign_", "")
-        st.title(f"Assign Resources to {project_id}")
-        # Assignment logic here
+    elif st.session_state.current_view == "assign":
+        display_new_assignment()
+    elif st.session_state.current_view == "assignments":
+        display_assignment_tracking()  # Changed from display_assignments()
 
 if __name__ == "__main__":
     main()

@@ -319,6 +319,300 @@ async def get_recent_activity():
         }
     ]
 
+# Assignment Tracking Endpoints
+@app.get("/assignments")
+async def get_all_assignments():
+    """Get all current assignments"""
+    try:
+        sheets_service = SheetsService()
+        sheets_service.authenticate()
+        
+        missions = sheets_service.get_missions()
+        pilots = sheets_service.get_pilots()
+        drones = sheets_service.get_drones()
+        
+        assignments = []
+        for mission in missions:
+            if mission.assigned_pilot and mission.assigned_drone:
+                pilot = next((p for p in pilots if p.pilot_id == mission.assigned_pilot), None)
+                drone = next((d for d in drones if d.drone_id == mission.assigned_drone), None)
+                
+                assignment = {
+                    "project_id": mission.project_id,
+                    "client": mission.client,
+                    "location": mission.location,
+                    "start_date": mission.start_date,
+                    "end_date": mission.end_date,
+                    "priority": mission.priority,
+                    "assigned_pilot": {
+                        "pilot_id": pilot.pilot_id if pilot else mission.assigned_pilot,
+                        "name": pilot.name if pilot else "Unknown",
+                        "skills": pilot.skills if pilot else [],
+                        "location": pilot.location if pilot else "Unknown"
+                    } if pilot else {"pilot_id": mission.assigned_pilot},
+                    "assigned_drone": {
+                        "drone_id": drone.drone_id if drone else mission.assigned_drone,
+                        "model": drone.model if drone else "Unknown",
+                        "capabilities": drone.capabilities if drone else [],
+                        "location": drone.location if drone else "Unknown"
+                    } if drone else {"drone_id": mission.assigned_drone},
+                    "status": "Active" if isinstance(mission.end_date, date) and mission.end_date >= datetime.now().date() else "Completed"
+                }
+                assignments.append(assignment)
+        
+        return assignments
+    except Exception as e:
+        logger.error(f"Error getting assignments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/assignments/{project_id}/reassign")
+async def reassign_mission(project_id: str, reassignment: dict):
+    """Reassign resources to a mission"""
+    try:
+        sheets_service = SheetsService()
+        
+        # Get current assignment
+        mission = sheets_service.get_mission(project_id)
+        if not mission:
+            raise HTTPException(status_code=404, detail="Mission not found")
+        
+        old_pilot_id = mission.assigned_pilot
+        old_drone_id = mission.assigned_drone
+        
+        # New assignments
+        new_pilot_id = reassignment.get("pilot_id")
+        new_drone_id = reassignment.get("drone_id")
+        
+        if not new_pilot_id or not new_drone_id:
+            raise HTTPException(status_code=400, detail="Both pilot_id and drone_id are required")
+        
+        # Check if new resources are available
+        matching_service = MatchingService()
+        pilots = sheets_service.get_pilots()
+        drones = sheets_service.get_drones()
+        
+        new_pilot = next((p for p in pilots if p.pilot_id == new_pilot_id), None)
+        new_drone = next((d for d in drones if d.drone_id == new_drone_id), None)
+        
+        if not new_pilot:
+            raise HTTPException(status_code=404, detail=f"Pilot {new_pilot_id} not found")
+        if not new_drone:
+            raise HTTPException(status_code=404, detail=f"Drone {new_drone_id} not found")
+        
+        # Check conflicts
+        conflict_detector = ConflictDetector(sheets_service)
+        conflicts = conflict_detector.check_assignment_conflicts(mission, new_pilot, new_drone)
+        
+        if conflicts:
+            conflict_messages = "\n".join([c["message"] for c in conflicts])
+            raise HTTPException(status_code=400, detail=f"Reassignment conflicts:\n{conflict_messages}")
+        
+        # Perform reassignment
+        success = sheets_service.assign_to_mission(project_id, new_pilot_id, new_drone_id)
+        
+        if success:
+            # Free up old resources if they're still assigned to this mission
+            if old_pilot_id:
+                sheets_service.update_pilot_status(old_pilot_id, "Available")
+            if old_drone_id:
+                sheets_service.update_drone_status(old_drone_id, "Available")
+            
+            return {
+                "message": f"Successfully reassigned {project_id}",
+                "old_assignment": {"pilot_id": old_pilot_id, "drone_id": old_drone_id},
+                "new_assignment": {"pilot_id": new_pilot_id, "drone_id": new_drone_id}
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update assignment in sheets")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reassigning mission: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Drone Inventory Endpoints
+@app.get("/drones/search")
+async def search_drones(
+    capability: str = None,
+    location: str = None,
+    status: str = None,
+    available_only: bool = False
+):
+    """Search drones with filters"""
+    try:
+        sheets_service = SheetsService()
+        sheets_service.authenticate()
+        
+        drones = sheets_service.get_drones()
+        
+        # Apply filters
+        filtered_drones = drones
+        
+        if capability:
+            filtered_drones = [d for d in filtered_drones if capability.lower() in [c.lower() for c in d.capabilities]]
+        
+        if location:
+            filtered_drones = [d for d in filtered_drones if d.location.lower() == location.lower()]
+        
+        if status:
+            filtered_drones = [d for d in filtered_drones if d.status.lower() == status.lower()]
+        
+        if available_only:
+            filtered_drones = [d for d in filtered_drones if d.status == "Available"]
+        
+        # Sort by maintenance due date
+        filtered_drones.sort(key=lambda x: x.maintenance_due if x.maintenance_due else date(9999, 12, 31))
+        
+        return [d.dict() for d in filtered_drones]
+        
+    except Exception as e:
+        logger.error(f"Error searching drones: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/drones/maintenance")
+async def get_maintenance_drones(days_threshold: int = 7):
+    """Get drones needing maintenance"""
+    try:
+        sheets_service = SheetsService()
+        sheets_service.authenticate()
+        
+        drones = sheets_service.get_drones()
+        today = datetime.now().date()
+        
+        maintenance_drones = []
+        for drone in drones:
+            if drone.maintenance_due:
+                days_until = (drone.maintenance_due - today).days
+                if days_until <= days_threshold:
+                    maintenance_drones.append({
+                        **drone.dict(),
+                        "days_until_maintenance": days_until,
+                        "status": "OVERDUE" if days_until < 0 else f"Due in {days_until} days"
+                    })
+        
+        # Sort by urgency
+        maintenance_drones.sort(key=lambda x: x["days_until_maintenance"])
+        
+        return maintenance_drones
+        
+    except Exception as e:
+        logger.error(f"Error getting maintenance drones: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/drones/{drone_id}/status")
+async def update_drone_status(drone_id: str, update: DroneUpdate):
+    """Update drone status"""
+    try:
+        sheets_service = SheetsService()
+        
+        success = sheets_service.update_drone_status(drone_id, update.status)
+        if not success:
+            raise HTTPException(status_code=404, detail="Drone not found")
+        
+        # If updating assignment
+        if update.current_assignment:
+            # Update drone assignment logic here
+            pass
+        
+        return {
+            "message": f"Drone {drone_id} status updated to {update.status}",
+            "drone_id": drone_id,
+            "new_status": update.status
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating drone status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/drones/{drone_id}/maintenance")
+async def update_drone_maintenance(drone_id: str, maintenance_date: dict):
+    """Update drone maintenance date"""
+    try:
+        sheets_service = SheetsService()
+        
+        new_date_str = maintenance_date.get("maintenance_due")
+        if not new_date_str:
+            raise HTTPException(status_code=400, detail="maintenance_due date required")
+        
+        # Parse date
+        try:
+            new_date = datetime.strptime(new_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        
+        # Update in Google Sheets
+        worksheet = sheets_service._get_worksheet("drone_fleet")
+        if not worksheet:
+            raise HTTPException(status_code=500, detail="Cannot access drone fleet worksheet")
+        
+        cell = worksheet.find(drone_id)
+        if not cell:
+            raise HTTPException(status_code=404, detail="Drone not found")
+        
+        # Update maintenance due date (assuming column G)
+        worksheet.update_cell(cell.row, 7, new_date_str)
+        
+        # Clear cache
+        sheets_service._drones_cache = None
+        
+        return {
+            "message": f"Drone {drone_id} maintenance updated to {new_date_str}",
+            "drone_id": drone_id,
+            "maintenance_due": new_date_str
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating drone maintenance: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/drones/deployment")
+async def get_deployment_status():
+    """Get deployment status of all drones"""
+    try:
+        sheets_service = SheetsService()
+        sheets_service.authenticate()
+        
+        drones = sheets_service.get_drones()
+        missions = sheets_service.get_missions()
+        
+        deployment_status = []
+        for drone in drones:
+            # Find mission assigned to this drone
+            assigned_mission = next(
+                (m for m in missions if m.assigned_drone == drone.drone_id),
+                None
+            )
+            
+            status = {
+                "drone_id": drone.drone_id,
+                "model": drone.model,
+                "status": drone.status,
+                "location": drone.location,
+                "assigned_to": assigned_mission.project_id if assigned_mission else None,
+                "client": assigned_mission.client if assigned_mission else None,
+                "mission_dates": f"{assigned_mission.start_date} to {assigned_mission.end_date}" if assigned_mission else None,
+                "maintenance_due": drone.maintenance_due,
+                "capabilities": drone.capabilities
+            }
+            
+            # Calculate maintenance urgency
+            if drone.maintenance_due:
+                today = datetime.now().date()
+                days_until = (drone.maintenance_due - today).days
+                status["maintenance_urgency"] = "OVERDUE" if days_until < 0 else f"{days_until} days"
+            
+            deployment_status.append(status)
+        
+        return deployment_status
+        
+    except Exception as e:
+        logger.error(f"Error getting deployment status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Global exception handler"""
