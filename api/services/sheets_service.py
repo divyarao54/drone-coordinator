@@ -226,7 +226,7 @@ class SheetsService:
                 return False
             
             # Update status in column G (status column)
-            worksheet.update_cell(cell.row, 7, status)
+            worksheet.update_cell(cell.row, 6, status)
             
             # Clear cache to force refresh
             self._pilots_cache = None

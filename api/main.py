@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from datetime import datetime
+from datetime import datetime, date
 import logging
 
 from api.agents.coordinator_agent import CoordinatorAgent
@@ -61,26 +61,81 @@ async def root():
 async def get_stats():
     """Get system statistics"""
     try:
+        sheets_service = SheetsService()
+        sheets_service.authenticate()
+        
         pilots = sheets_service.get_pilots()
         drones = sheets_service.get_drones()
         missions = sheets_service.get_missions()
         
-        available_pilots = sum(1 for p in pilots if p.status == "Available")
-        available_drones = sum(1 for d in drones if d.status == "Available")
-        active_missions = sum(1 for m in missions if datetime.strptime(m.end_date, "%Y-%m-%d").date() >= datetime.now().date())
+        # Count available pilots
+        available_pilots = 0
+        for p in pilots:
+            if p.status and p.status.lower() == "available":
+                available_pilots += 1
+        
+        # Count available drones
+        available_drones = 0
+        for d in drones:
+            if d.status and d.status.lower() == "available":
+                available_drones += 1
+        
+        # Count active missions (end date is today or in future)
+        today = datetime.now().date()
+        active_missions = 0
+        for m in missions:
+            try:
+                # m.end_date could be a date object OR a string
+                end_date = None
+                
+                if isinstance(m.end_date, date):
+                    # Already a date object
+                    end_date = m.end_date
+                elif isinstance(m.end_date, str):
+                    # Try to parse string date
+                    try:
+                        end_date = datetime.strptime(m.end_date, '%Y-%m-%d').date()
+                    except ValueError:
+                        # Try other formats
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y']:
+                            try:
+                                end_date = datetime.strptime(m.end_date, fmt).date()
+                                break
+                            except ValueError:
+                                continue
+                elif m.end_date is None:
+                    # No end date, skip
+                    continue
+                
+                if end_date and end_date >= today:
+                    active_missions += 1
+            except Exception as e:
+                logger.warning(f"Error processing mission date for {m.project_id}: {e}")
+                continue
+        
+        # Count pending assignments (missions without assigned pilot)
+        pending_assignments = 0
+        for m in missions:
+            if not m.assigned_pilot or str(m.assigned_pilot).strip() in ['', '–', 'None', 'nan']:
+                pending_assignments += 1
         
         return {
             "available_pilots": available_pilots,
             "available_drones": available_drones,
             "active_missions": active_missions,
-            "pending_assignments": len([m for m in missions if not m.assigned_pilot]),
+            "pending_assignments": pending_assignments,
             "last_sync": datetime.now().isoformat(),
-            "available_pilots_change": 0,  # Can be calculated from historical data
-            "available_drones_change": 0
+            "available_pilots_change": 0,
+            "available_drones_change": 0,
+            "total_pilots": len(pilots),
+            "total_drones": len(drones),
+            "total_missions": len(missions),
+            "status": "healthy"
         }
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        logger.error(traceback.format_exc())
 
 @app.get("/pilots")
 async def get_pilots(status: str = None, location: str = None):
